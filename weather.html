@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>My Weather Site</title>
+    <style>
+        body {
+            background-color: #111;
+            color: #fff;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding-top: 100px;
+        }
+        .card {
+            background: #222;
+            padding: 30px;
+            border-radius: 12px;
+            display: inline-block;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        }
+        h1 { margin-bottom: 10px; }
+        #vibe { color: #00ffcc; font-weight: bold; font-size: 1.2rem; margin-top: 20px; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h1>Current Weather</h1>
+        <p id="temp">Loading temperature...</p>
+        <p id="clouds">Checking the sky...</p>
+        <p id="vibe">Analyzing the vibe...</p>
+    </div>
+
+    <script>
+        async function getWeather() {
+            // CHANGE THESE NUMBERS to your city's latitude and longitude
+            // (Google your city + "latitude longitude" to find yours)
+            const lat = 43.3740;
+            const lon = 12.2510;
+
+            const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,cloud_code`;
+
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+
+                const temp = data.current.temperature_2m;
+                const cloudCode = data.current.cloud_code;
+
+                // Display the raw temp
+                document.getElementById('temp').innerText = `Temp: ${temp}°C`;
+
+                // Translate cloud codes into direct, informal descriptions
+                let cloudDesc = "";
+                if (cloudCode === 0) {
+                    cloudDesc = "Clear skies. Not a single cloud in sight.";
+                } else if (cloudCode >= 1 && cloudCode <= 3) {
+                    cloudDesc = "Partly cloudy. Scattered cumulus cotton balls up there.";
+                } else {
+                    cloudDesc = "Total overcast. A massive grey ceiling blocking the sun.";
+                }
+                document.getElementById('clouds').innerText = `Sky: ${cloudDesc}`;
+
+                // Informal Vibe translation based on temperature
+                let vibeText = "";
+                if (temp > 30) {
+                    vibeText = "Vibe: It's a furnace. Do not go outside without water.";
+                } else if (temp > 20) {
+                    vibeText = "Vibe: Actually nice. Go touch grass.";
+                } else if (temp > 10) {
+                    vibeText = "Vibe: Chilly. Grab a light hoodie.";
+                } else {
+                    vibeText = "Vibe: Freezing. Stay inside where it's warm.";
+                }
+                document.getElementById('vibe').innerText = vibeText;
+
+            } catch (error) {
+                document.getElementById('vibe').innerText = "Vibe: Error fetching weather. Check your internet.";
+            }
+        }
+
+        // Run it immediately when page opens
+        getWeather();
+
+        // Auto-update every 10 minutes (600,000 milliseconds)
+        setInterval(getWeather, 600000);
+    </script>
+
+</body>
+</html>
