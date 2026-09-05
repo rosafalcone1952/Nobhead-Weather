@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>My Weather Site</title>
+    <title>Cornetto Weather</title>
     <style>
         body {
             background-color: #111;
@@ -18,62 +18,51 @@
             display: inline-block;
             box-shadow: 0 4px 10px rgba(0,0,0,0.5);
         }
-        h1 { margin-bottom: 10px; }
+        h1 { margin-bottom: 5px; font-size: 1.8rem; }
+        h3 { color: #888; margin-top: 0; font-weight: normal; }
         #vibe { color: #00ffcc; font-weight: bold; font-size: 1.2rem; margin-top: 20px; }
     </style>
 </head>
 <body>
 
     <div class="card">
-        <h1>Current Weather</h1>
+        <h1>Cornetto Weather</h1>
+        <h3>Via del Commercio Area</h3>
         <p id="temp">Loading temperature...</p>
-        <p id="clouds">Checking the sky...</p>
         <p id="vibe">Analyzing the vibe...</p>
     </div>
 
     <script>
         async function getWeather() {
-            // Cornetto, Italy coordinates
+            // Cornetto, Perugia coordinates
             const lat = 43.3740;
             const lon = 12.2510;
 
-            const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,cloud_code`;
+            const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m`;
 
             try {
                 const response = await fetch(url);
                 if (!response.ok) throw new Error("Network response was not ok");
                 
                 const data = await response.json();
-
                 const temp = data.current.temperature_2m;
-                const cloudCode = data.current.cloud_code;
 
                 document.getElementById('temp').innerText = `Temp: ${temp}°C`;
 
-                let cloudDesc = "";
-                if (cloudCode === 0) {
-                    cloudDesc = "Clear skies. Not a single cloud in sight.";
-                } else if (cloudCode >= 1 && cloudCode <= 3) {
-                    cloudDesc = "Partly cloudy. Scattered cotton balls up there.";
-                } else {
-                    cloudDesc = "Total overcast. A massive grey ceiling blocking the sun.";
-                }
-                document.getElementById('clouds').innerText = `Sky: ${cloudDesc}`;
-
                 let vibeText = "";
                 if (temp > 30) {
-                    vibeText = "Vibe: It's a furnace. Do not go outside without water.";
+                    vibeText = "Vibe: Absolute furnace. Do not step on asphalt barefoot.";
                 } else if (temp > 20) {
-                    vibeText = "Vibe: Actually nice. Go touch grass.";
+                    vibeText = "Vibe: Decent out. Go touch some grass.";
                 } else if (temp > 10) {
-                    vibeText = "Vibe: Chilly. Grab a light hoodie.";
+                    vibeText = "Vibe: Crisp. Grab a hoodie.";
                 } else {
-                    vibeText = "Vibe: Freezing. Stay inside.";
+                    vibeText = "Vibe: Freezing. Hibernate indoors.";
                 }
                 document.getElementById('vibe').innerText = vibeText;
 
             } catch (error) {
-                document.getElementById('vibe').innerText = "Vibe: Error fetching weather. Check your internet.";
+                document.getElementById('vibe').innerText = "Vibe: Error fetching weather.";
             }
         }
 
