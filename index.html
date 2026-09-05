@@ -2,73 +2,287 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Cornetto Weather</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cornetto, Province of Perugia — Meteorological Terminal</title>
     <style>
+        :root {
+            --bg: #090a0f;
+            --panel: rgba(18, 22, 33, 0.75);
+            --border: rgba(255, 255, 255, 0.08);
+            --text-main: #f1f5f9;
+            --text-muted: #64748b;
+            --accent: #3b82f6;
+            --warn-bg: rgba(220, 38, 38, 0.15);
+            --warn-border: rgba(220, 38, 38, 0.4);
+        }
+
+        * { box-sizing: border-box; }
+
         body {
-            background-color: #111;
-            color: #fff;
-            font-family: Arial, sans-serif;
-            text-align: center;
-            padding-top: 100px;
+            background-color: var(--bg);
+            color: var(--text-main);
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            margin: 0;
+            padding: 24px;
+            display: flex;
+            justify-content: center;
         }
-        .card {
-            background: #222;
-            padding: 30px;
+
+        .wrapper {
+            width: 100%;
+            max-width: 520px;
+        }
+
+        .panel {
+            background: var(--panel);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border);
             border-radius: 12px;
-            display: inline-block;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            padding: 24px;
+            margin-bottom: 16px;
+            box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
+            opacity: 0;
+            transform: translateY(10px);
+            animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
-        h1 { margin-bottom: 5px; font-size: 1.8rem; }
-        h3 { color: #888; margin-top: 0; font-weight: normal; }
-        #vibe { color: #00ffcc; font-weight: bold; font-size: 1.2rem; margin-top: 20px; }
+
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Severe Warning Module */
+        #alert-panel {
+            display: none;
+            background: var(--warn-bg);
+            border: 1px solid var(--warn-border);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+        #alert-panel h4 { margin: 0 0 4px 0; color: #f87171; font-size: 0.85rem; letter-spacing: 0.05em; text-transform: uppercase; }
+        #alert-panel p { margin: 0; font-size: 0.85rem; color: #fca5a5; line-height: 1.4; }
+
+        /* Header Layout */
+        .location-meta h1 { margin: 0; font-size: 1.1rem; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-muted); }
+        .location-meta h2 { margin: 4px 0 0 0; font-size: 1.25rem; font-weight: 600; }
+
+        .current-grid {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin: 24px 0 16px 0;
+        }
+        .temp-val { font-size: 3.5rem; font-weight: 700; line-height: 1; letter-spacing: -0.03em; }
+        .condition-text { text-align: right; font-size: 0.9rem; color: var(--text-muted); }
+
+        .summary-box {
+            font-size: 0.85rem;
+            color: #cbd5e1;
+            background: rgba(255, 255, 255, 0.03);
+            border-left: 2px solid var(--accent);
+            padding: 12px;
+            border-radius: 0 6px 6px 0;
+            line-height: 1.5;
+            margin-top: 16px;
+        }
+
+        /* Specs Grid */
+        .specs-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .spec-item {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            padding: 12px;
+            border-radius: 8px;
+        }
+        .spec-item span { display: block; font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px; letter-spacing: 0.05em; }
+        .spec-item strong { font-size: 0.95rem; }
+
+        /* Forecast Outlook */
+        h3 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin: 0 0 16px 0; }
+        .forecast-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.85rem;
+        }
+        .forecast-row:last-child { border-bottom: none; }
+        .f-day { width: 90px; color: var(--text-muted); }
+        .f-desc { flex-grow: 1; padding: 0 12px; font-size: 0.8rem; color: #94a3b8; }
+        .f-temps { text-align: right; font-weight: 600; width: 70px; }
+        .f-low { color: var(--text-muted); margin-left: 6px; font-weight: normal; }
     </style>
 </head>
 <body>
 
-    <div class="card">
-        <h1>Cornetto Weather</h1>
-        <h3>Via del Commercio Area</h3>
-        <p id="temp">Loading temperature...</p>
-        <p id="vibe">Analyzing the vibe...</p>
+    <div class="wrapper">
+        
+        <!-- Severe Weather Alert Module -->
+        <div id="alert-panel">
+            <h4 id="alert-title">System Alert</h4>
+            <p id="alert-desc">Monitoring active atmospheric warnings...</p>
+        </div>
+
+        <!-- Primary Live Feed -->
+        <div class="panel" style="animation-delay: 0.1s;">
+            <div class="location-meta">
+                <h1>Station Feed</h1>
+                <h2 id="loc-title">Cornetto, Province of Perugia</h2>
+            </div>
+            
+            <div class="current-grid">
+                <div class="temp-val" id="curr-temp">--°C</div>
+                <div class="condition-text" id="curr-cond">Syncing telemetry...</div>
+            </div>
+
+            <div class="summary-box" id="daily-narrative">
+                Loading meteorological breakdown...
+            </div>
+        </div>
+
+        <!-- Atmosphere Telemetry -->
+        <div class="panel" style="animation-delay: 0.2s;">
+            <h3>Atmospheric Metrics</h3>
+            <div class="specs-grid">
+                <div class="spec-item">
+                    <span>Solar Elevation</span>
+                    <strong id="sun-alt">--°</strong>
+                </div>
+                <div class="spec-item">
+                    <span>Wind Vector</span>
+                    <strong id="wind-data">--</strong>
+                </div>
+            </div>
+        </div>
+
+        <!-- Extended Outlook -->
+        <div class="panel" style="animation-delay: 0.3s;">
+            <h3>7-Day Trajectory</h3>
+            <div id="forecast-list">
+                <div style="color: var(--text-muted); font-size: 0.85rem;">Constructing forecast matrix...</div>
+            </div>
+        </div>
+
     </div>
 
     <script>
-        async function getWeather() {
-            // Cornetto, Perugia coordinates
+        async function initTerminal() {
             const lat = 43.3740;
             const lon = 12.2510;
-
-            const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m`;
+            const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code,wind_speed_10m,wind_direction_10m&hourly=cape&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto`;
 
             try {
-                const response = await fetch(url);
-                if (!response.ok) throw new Error("Network response was not ok");
+                const res = await fetch(url);
+                const data = await res.json();
+
+                // Current Feed
+                const temp = Math.round(data.current.temperature_2m);
+                const wCode = data.current.weather_code;
+                const windSpeed = data.current.wind_speed_10m;
                 
-                const data = await response.json();
-                const temp = data.current.temperature_2m;
+                document.getElementById('curr-temp').innerText = `${temp}°C`;
+                const conditionInfo = getConditionData(wCode);
+                document.getElementById('curr-cond').innerText = conditionInfo.label;
 
-                document.getElementById('temp').innerText = `Temp: ${temp}°C`;
-
-                let vibeText = "";
-                if (temp > 30) {
-                    vibeText = "Vibe: Absolute furnace. Do not step on asphalt barefoot.";
-                } else if (temp > 20) {
-                    vibeText = "Vibe: Decent out. Go touch some grass.";
-                } else if (temp > 10) {
-                    vibeText = "Vibe: Crisp. Grab a hoodie.";
+                // Narrative Synthesis based on conditions
+                let narrative = "";
+                if (temp >= 32) {
+                    narrative = "Hot with sunny spells; strong caution advised if doing strenuous activities outside.";
+                } else if (temp >= 25) {
+                    narrative = "Warm conditions with high solar visibility; standard UV protection recommended.";
+                } else if (temp >= 15) {
+                    narrative = "Stable baseline temperature profile; minimal atmospheric resistance.";
                 } else {
-                    vibeText = "Vibe: Freezing. Hibernate indoors.";
+                    narrative = "Sub-optimal thermal parameters; low baseline energy detected.";
                 }
-                document.getElementById('vibe').innerText = vibeText;
+                document.getElementById('daily-narrative').innerText = narrative;
 
-            } catch (error) {
-                document.getElementById('vibe').innerText = "Vibe: Error fetching weather.";
+                // Warning check (CAPE / Thunderstorm codes)
+                const hourIndex = new Date().getHours();
+                const capeVal = data.hourly.cape ? data.hourly.cape[hourIndex] : 0;
+                const alertPanel = document.getElementById('alert-panel');
+                if (capeVal > 500 || wCode >= 95) {
+                    alertPanel.style.display = "block";
+                    document.getElementById('alert-desc').innerText = "Instability index elevated. Severe thunderstorm activity or electrical anomalies indicated.";
+                } else {
+                    alertPanel.style.display = "none";
+                }
+
+                // Sun Altitude Simulation
+                const hour = new Date().getHours();
+                let sunAlt = hour >= 6 && hour <= 20 ? Math.round(Math.sin(((hour - 6) / 14) * Math.PI) * 65) : 0;
+                document.getElementById('sun-alt').innerText = `${sunAlt}°`;
+                document.getElementById('wind-data').innerText = `${windSpeed} km/h`;
+
+                // 7-Day Forecast Injection with granular descriptions
+                const listContainer = document.getElementById('forecast-list');
+                listContainer.innerHTML = "";
+
+                const daily = data.daily;
+                for (let i = 0; i < 7; i++) {
+                    const dateObj = new Date(daily.time[i]);
+                    const dayLabel = i === 0 ? "Today" : dateObj.toLocaleDateString('en-US', { weekday: 'short' });
+                    const maxT = Math.round(daily.temperature_2m_max[i]);
+                    const minT = Math.round(daily.temperature_2m_min[i]);
+                    const code = daily.weather_code[i];
+                    
+                    const info = getConditionData(code);
+                    const descText = getDetailedDescription(code, maxT);
+
+                    const row = document.createElement('div');
+                    row.className = 'forecast-row';
+                    row.innerHTML = `
+                        <div class="f-day">${dayLabel}</div>
+                        <div class="f-desc">${descText}</div>
+                        <div class="f-temps">${maxT}°<span class="f-low">${minT}°</span></div>
+                    `;
+                    listContainer.appendChild(row);
+                }
+
+            } catch (err) {
+                document.getElementById('curr-cond').innerText = "Telemetry link failed.";
+                document.getElementById('daily-narrative').innerText = "Error parsing localized data stream.";
             }
         }
 
-        getWeather();
-        setInterval(getWeather, 600000);
-    </script>
+        function getConditionData(code) {
+            switch(code) {
+                case 0: return { label: "Clear" };
+                case 1:
+                case 2: return { label: "Partly Cloudy" };
+                case 3: return { label: "Overcast" };
+                case 45:
+                case 48: return { label: "Fog / Mist" };
+                case 51:
+                case 53:
+                case 55: return { label: "Drizzle" };
+                case 61:
+                case 63: return { label: "Rain Outbreaks" };
+                case 95:
+                case 96:
+                case 99: return { label: "Thunderstorm" };
+                default: return { label: "Variable" };
+            }
+        }
 
+        function getDetailedDescription(code, maxTemp) {
+            if (code >= 95) return "Unstable airmass; potential severe electrical activity.";
+            if (code >= 61) return "Turning cloudy and humid; outbreaks of rain in the afternoon.";
+            if (code >= 51) return "Intermittent light moisture patterns across sector.";
+            if (code >= 1 && code <= 3) return "Broken cloud cover with occasional thermal windows.";
+            if (maxTemp >= 32) return "High thermal intensity; continuous clear skies.";
+            return "Stable atmospheric pressure; nominal conditions.";
+        }
+
+        initTerminal();
+    </script>
 </body>
 </html>
