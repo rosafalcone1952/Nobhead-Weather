@@ -33,8 +33,7 @@
 
     <script>
         async function getWeather() {
-            // CHANGE THESE NUMBERS to your city's latitude and longitude
-            // (Google your city + "latitude longitude" to find yours)
+            // Cornetto, Italy coordinates
             const lat = 43.3740;
             const lon = 12.2510;
 
@@ -42,26 +41,25 @@
 
             try {
                 const response = await fetch(url);
+                if (!response.ok) throw new Error("Network response was not ok");
+                
                 const data = await response.json();
 
                 const temp = data.current.temperature_2m;
                 const cloudCode = data.current.cloud_code;
 
-                // Display the raw temp
                 document.getElementById('temp').innerText = `Temp: ${temp}°C`;
 
-                // Translate cloud codes into direct, informal descriptions
                 let cloudDesc = "";
                 if (cloudCode === 0) {
                     cloudDesc = "Clear skies. Not a single cloud in sight.";
                 } else if (cloudCode >= 1 && cloudCode <= 3) {
-                    cloudDesc = "Partly cloudy. Scattered cumulus cotton balls up there.";
+                    cloudDesc = "Partly cloudy. Scattered cotton balls up there.";
                 } else {
                     cloudDesc = "Total overcast. A massive grey ceiling blocking the sun.";
                 }
                 document.getElementById('clouds').innerText = `Sky: ${cloudDesc}`;
 
-                // Informal Vibe translation based on temperature
                 let vibeText = "";
                 if (temp > 30) {
                     vibeText = "Vibe: It's a furnace. Do not go outside without water.";
@@ -70,7 +68,7 @@
                 } else if (temp > 10) {
                     vibeText = "Vibe: Chilly. Grab a light hoodie.";
                 } else {
-                    vibeText = "Vibe: Freezing. Stay inside where it's warm.";
+                    vibeText = "Vibe: Freezing. Stay inside.";
                 }
                 document.getElementById('vibe').innerText = vibeText;
 
@@ -79,10 +77,7 @@
             }
         }
 
-        // Run it immediately when page opens
         getWeather();
-
-        // Auto-update every 10 minutes (600,000 milliseconds)
         setInterval(getWeather, 600000);
     </script>
 
